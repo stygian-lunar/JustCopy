@@ -46,3 +46,44 @@ public class FileToTarGzService {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+wertyuiop[poiuiooooooooooooooooooooooooooooo
+
+
+
+
+
+public class FileLastModifiedDate {
+    public static String getLastModifiedDate(String filename) {
+        Path filePath = Paths.get(filename);
+
+        if (filePath.toFile().exists()) {
+            try {
+                BasicFileAttributes attributes = java.nio.file.Files.readAttributes(filePath, BasicFileAttributes.class);
+                FileTime lastModifiedTime = attributes.lastModifiedTime();
+                Date lastModifiedDate = new Date(lastModifiedTime.toMillis());
+
+                // Format the date as "yyyyMMdd"
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+                return dateFormat.format(lastModifiedDate);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("File does not exist.");
+        }
+
+        return null; // Return null in case of an error or if the file doesn't exist
+    }
