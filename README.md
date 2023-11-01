@@ -347,4 +347,61 @@ public class FolderToTarGzConverter {
 }
 
 
+hello again
+
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+
+import java.io.*;
+
+public class FileToTarGzConverter {
+
+    public static void convertToTarGz(String inputFilePath, String outputFilePath) {
+        try {
+            File inputFile = new File(inputFilePath);
+            File outputFile = new File(outputFilePath);
+
+            // Create the parent directory for the output file if it doesn't exist
+            outputFile.getParentFile().mkdirs();
+
+            // Set up output streams
+            FileOutputStream fos = new FileOutputStream(outputFile);
+            GzipCompressorOutputStream gzipOS = new GzipCompressorOutputStream(fos);
+            TarArchiveOutputStream tarOS = new TarArchiveOutputStream(gzipOS);
+
+            // Create a TarEntry for the input file
+            TarArchiveEntry tarEntry = new TarArchiveEntry(inputFile);
+            tarEntry.setName(inputFile.getName());
+
+            tarOS.putArchiveEntry(tarEntry);
+
+            // Read the content of the input file and write it to the archive
+            FileInputStream fis = new FileInputStream(inputFile);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = fis.read(buffer)) != -1) {
+                tarOS.write(buffer, 0, len);
+            }
+
+            fis.close();
+            tarOS.closeArchiveEntry();
+            tarOS.close();
+            gzipOS.close();
+            fos.close();
+
+            System.out.println("File " + inputFilePath + " has been converted to " + outputFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        // Example usage:
+        String inputFilePath = "path/to/your/input/file.txt";
+        String outputFilePath = "path/to/your/output/archive.tar.gz";
+        convertToTarGz(inputFilePath, outputFilePath);
+    }
+}
 
