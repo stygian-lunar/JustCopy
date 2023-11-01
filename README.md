@@ -405,3 +405,37 @@ public class FileToTarGzConverter {
     }
 }
 
+recursively search 
+
+
+import java.io.File;
+
+public class FileLister {
+
+    public static void listFilesRecursively(String directoryPath) {
+        File directory = new File(directoryPath);
+
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        // If it's a directory, traverse it recursively
+                        listFilesRecursively(file.getAbsolutePath());
+                    } else {
+                        // If it's a file, print its absolute path
+                        System.out.println("File: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        String startingDirectory = "path/to/starting/directory";
+        listFilesRecursively(startingDirectory);
+    }
+}
+
+
