@@ -87,3 +87,64 @@ public class FileLastModifiedDate {
 
         return null; // Return null in case of an error or if the file doesn't exist
     }
+
+
+
+
+
+    tarr
+
+
+
+    import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.utils.IOUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class TarGzConverter {
+    public static void main(String[] args) {
+        String inputDirectoryPath = "path/to/input/directory";
+        String outputFilePath = "path/to/output/archive.tar.gz";
+
+        try {
+            createTarGzArchive(inputDirectoryPath, outputFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void createTarGzArchive(String inputDirectoryPath, String outputFilePath) throws IOException {
+        File output = new File(outputFilePath);
+        try (FileOutputStream fileOut = new FileOutputStream(output);
+             TarArchiveOutputStream tarOut = new TarArchiveOutputStream(new GzipCompressorOutputStream(fileOut))) {
+            File inputDirectory = new File(inputDirectoryPath);
+            addFilesToTarGz(tarOut, inputDirectory, "");
+        }
+    }
+
+    private static void addFilesToTarGz(TarArchiveOutputStream tarOut, File file, String entryName) throws IOException {
+        String entryNamePrefix = entryName.isEmpty() ? "" : entryName + File.separator;
+        TarArchiveEntry tarEntry = new TarArchiveEntry(file, entryNamePrefix + file.getName());
+        tarOut.putArchiveEntry(tarEntry);
+
+        if (file.isFile()) {
+            try (FileInputStream fileInput = new FileInputStream(file)) {
+                IOUtils.copy(fileInput, tarOut);
+                tarOut.closeArchiveEntry();
+            }
+        } else if (file.isDirectory()) {
+            tarOut.closeArchiveEntry();
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    addFilesToTarGz(tarOut, child, entryNamePrefix + file.getName());
+                }
+            }
+        }
+    }
+}
+
