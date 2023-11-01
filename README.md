@@ -210,3 +210,74 @@ public class FileToTarGzConverter {
     }
 }
 
+
+
+ladt one
+
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+
+import java.io.*;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
+
+public class FolderToTarGzConverter {
+
+    public static void convertFolderToTarGz(String sourceFolderPath, String targetFolderPath) {
+        try {
+            Path sourcePath = new File(sourceFolderPath).toPath();
+            Path targetPath = new File(targetFolderPath).toPath();
+
+            if (!Files.exists(targetPath)) {
+                Files.createDirectories(targetPath);
+            }
+
+            try (OutputStream os = new FileOutputStream(targetFolderPath + File.separator + "archive.tar.gz");
+                 GzipCompressorOutputStream gzipOs = new GzipCompressorOutputStream(os);
+                 TarArchiveOutputStream tarOs = new TarArchiveOutputStream(gzipOs)) {
+
+                Files.walkFileTree(sourcePath, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        // Create a TarArchiveEntry for each file
+                        TarArchiveEntry entry = new TarArchiveEntry(file.toFile());
+                        entry.setName(sourcePath.relativize(file).toString());
+
+                        // Put the TarArchiveEntry and write the file content to the TarArchiveOutputStream
+                        tarOs.putArchiveEntry(entry);
+                        try (InputStream is = new FileInputStream(file.toFile())) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead;
+                            while ((bytesRead = is.read(buffer)) != -1) {
+                                tarOs.write(buffer, 0, bytesRead);
+                            }
+                        }
+                        tarOs.closeArchiveEntry();
+
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            }
+
+            System.out.println("Folder " + sourceFolderPath + " has been converted to " + targetFolderPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        String sourceFolderPath = "path/to/source/folder";
+        String targetFolderPath = "path/to/target/archive/folder";
+        convertFolderToTarGz(sourceFolderPath, targetFolderPath);
+    }
+}
+
+
