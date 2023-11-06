@@ -1,3 +1,32 @@
+pseudo code
+
+Precondition: To archive(.tar.gz) all the type of files and save them
+Input No. of days old, list of file locations to be archived, parent-archive folder( eg: c:/test/archive )
+Ouput: 
+
+1. get the list of locations from the application.properties which is a single comma separated value eg: c:/test/files,c:/test/test1
+2. Split the location from "," and store as a list of string(each index-value is a source-location) eg: {"c://test//files","c://test//test,..."}
+3. iterated over each source-location and traverse recursively to get the absolute-path of each files and store them in an arraylist eg: {"c://test//files//a.txt", "c://test//files//b.txt" ,..}
+4. iterate over each file in the arrays list
+5. get the lastmodified-date of each file and calculate the duration between (last-modified-date and current-date)
+6. check if the duration of the file is x days or within x days(x is the no-of-days-old from application.properties)
+7. if true 
+	extract the filename from the absolute-path of file ('a' is extracted from c://test//files//a.txt)
+	create target-folder-location for storing the archived file(eg: parent-archive-folder +"//" lastmodified-date), check if parent-archive-folder folder already exists else create them 
+		eg(c:/test/archive/yyyymmdd/)
+	create the archive in .tar.gz format and save the file(as extracted-filename.tar.gz) in target-folder-location
+		eg(a.tar.gz) in (c:/test/archive/yyyymmdd/)
+
+This microservice has been scheduled to run on certain defined time as mentioned in the application.properties file (using cron expression cron expression)
+
+
+
+
+
+
+
+
+
 # JustCopy
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
