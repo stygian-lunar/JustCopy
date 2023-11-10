@@ -15,7 +15,6 @@ logback
 
 
 
-
 pseudo code
 
 Precondition: To archive(.tar.gz) all the type of files and save them
