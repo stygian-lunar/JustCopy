@@ -1,4 +1,21 @@
-logback
+logback-  in a file
+--------------------------
+<configuration>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>yourLogFile.log</file>
+        <encoder>
+            <pattern>%date %level [%thread] %logger{10} [%file:%line] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>
+
+-----------------
+
+logback- on console
 
 <configuration>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
