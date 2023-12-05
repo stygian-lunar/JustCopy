@@ -25,35 +25,47 @@ def get_last_commit_info(organization, repository, branch):
     else:
         return None, None
 
-def list_branches_with_last_commit_info(organization, repository):
+def list_branches_with_last_commit_info(organization):
     access_token = get_access_token()
 
-    # Get a list of branches for the repository
-    url = f'https://api.github.com/repos/{organization}/{repository}/branches'
+    # Get a list of repositories for the organization
+    repo_url = f'https://api.github.com/orgs/{organization}/repos'
     headers = {'Authorization': f'token {access_token}'}
-    response = requests.get(url, headers=headers)
+    response = requests.get(repo_url, headers=headers)
 
     if response.status_code == 200:
-        branches = response.json()
+        repositories = response.json()
 
         # Create a DataFrame to store the data
-        data = {'Branch': [], 'Last Commit Date': [], 'Last Commit Author': []}
+        data = {'Repository': [], 'Branch': [], 'Last Commit Date': [], 'Last Commit Author': []}
 
-        # Iterate through branches and retrieve last commit info
-        for branch in branches:
-            branch_name = branch['name']
-            commit_date, commit_author = get_last_commit_info(organization, repository, branch_name)
+        # Iterate through repositories
+        for repo in repositories:
+            repo_name = repo['name']
 
-            data['Branch'].append(branch_name)
-            data['Last Commit Date'].append(commit_date)
-            data['Last Commit Author'].append(commit_author)
+            # Get a list of branches for the repository
+            branch_url = f'https://api.github.com/repos/{organization}/{repo_name}/branches'
+            branch_response = requests.get(branch_url, headers=headers)
+
+            if branch_response.status_code == 200:
+                branches = branch_response.json()
+
+                # Iterate through branches and retrieve last commit info
+                for branch in branches:
+                    branch_name = branch['name']
+                    commit_date, commit_author = get_last_commit_info(organization, repo_name, branch_name)
+
+                    data['Repository'].append(repo_name)
+                    data['Branch'].append(branch_name)
+                    data['Last Commit Date'].append(commit_date)
+                    data['Last Commit Author'].append(commit_author)
 
         # Display data in a tabular format
         df = pd.DataFrame(data)
         print(df)
 
         # Save data to a CSV file
-        csv_filename = 'github_branches_info.csv'
+        csv_filename = 'github_repositories_info.csv'
         df.to_csv(csv_filename, index=False)
         print(f'\nData saved to {csv_filename}')
     else:
@@ -61,9 +73,8 @@ def list_branches_with_last_commit_info(organization, repository):
 
 if __name__ == "__main__":
     organization = 'your_organization'
-    repository = 'your_repository'
     
-    list_branches_with_last_commit_info(organization, repository)
+    list_branches_with_last_commit_info(organization)
 
 
 
