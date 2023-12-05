@@ -1,3 +1,76 @@
+import os
+import requests
+from datetime import datetime, timedelta
+import pandas as pd
+
+def get_access_token():
+    access_token = os.getenv('GITHUB_ACCESS_TOKEN')
+    if not access_token:
+        raise ValueError("GitHub access token is not set. Set the 'GITHUB_ACCESS_TOKEN' environment variable.")
+    return access_token
+
+def get_last_commit_info(organization, repository, branch):
+    access_token = get_access_token()
+    
+    # Get the last commit on the branch
+    commit_url = f'https://api.github.com/repos/{organization}/{repository}/commits?sha={branch}&per_page=1'
+    headers = {'Authorization': f'token {access_token}'}
+    commit_response = requests.get(commit_url, headers=headers)
+
+    if commit_response.status_code == 200:
+        commit_data = commit_response.json()[0]
+        commit_date = commit_data['commit']['author']['date']
+        commit_author = commit_data['commit']['author']['name']
+        return commit_date, commit_author
+    else:
+        return None, None
+
+def list_branches_with_last_commit_info(organization, repository):
+    access_token = get_access_token()
+
+    # Get a list of branches for the repository
+    url = f'https://api.github.com/repos/{organization}/{repository}/branches'
+    headers = {'Authorization': f'token {access_token}'}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        branches = response.json()
+
+        # Create a DataFrame to store the data
+        data = {'Branch': [], 'Last Commit Date': [], 'Last Commit Author': []}
+
+        # Iterate through branches and retrieve last commit info
+        for branch in branches:
+            branch_name = branch['name']
+            commit_date, commit_author = get_last_commit_info(organization, repository, branch_name)
+
+            data['Branch'].append(branch_name)
+            data['Last Commit Date'].append(commit_date)
+            data['Last Commit Author'].append(commit_author)
+
+        # Display data in a tabular format
+        df = pd.DataFrame(data)
+        print(df)
+
+        # Save data to a CSV file
+        csv_filename = 'github_branches_info.csv'
+        df.to_csv(csv_filename, index=False)
+        print(f'\nData saved to {csv_filename}')
+    else:
+        print(f'Error: {response.status_code} - {response.text}')
+
+if __name__ == "__main__":
+    organization = 'your_organization'
+    repository = 'your_repository'
+    
+    list_branches_with_last_commit_info(organization, repository)
+
+
+
+
+
+
+
 logback-  in a file
 --------------------------
 <configuration>
