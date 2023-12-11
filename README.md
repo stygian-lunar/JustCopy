@@ -1,5 +1,115 @@
 import os
 import requests
+import csv
+from datetime import datetime, timedelta
+
+def get_access_token():
+    access_token = os.getenv('GITHUB_ACCESS_TOKEN')
+    if not access_token:
+        raise ValueError("GitHub access token is not set. Set the 'GITHUB_ACCESS_TOKEN' environment variable.")
+    return access_token
+
+def get_last_commit_info(organization, repository, branch, access_token):
+    commit_url = f'https://api.github.com/repos/{organization}/{repository}/commits?sha={branch}&per_page=1'
+    headers = {'Authorization': f'token {access_token}'}
+    commit_response = requests.get(commit_url, headers=headers)
+
+    if commit_response.status_code == 200:
+        commit_data = commit_response.json()[0]
+        commit_date = commit_data['commit']['author']['date']
+        commit_author = commit_data['commit']['author']['name']
+        return commit_date, commit_author
+    else:
+        return None, None
+
+def list_branches_with_last_commit_info(organization):
+    access_token = get_access_token()
+
+    # Get a list of repositories for the organization
+    repo_url = f'https://api.github.com/orgs/{organization}/repos'
+    headers = {'Authorization': f'token {access_token}'}
+    response = requests.get(repo_url, headers=headers)
+
+    if response.status_code == 200:
+        repositories = response.json()
+
+        # Open a CSV file for writing
+        csv_filename = 'github_repositories_info.csv'
+        with open(csv_filename, 'w', newline='') as csvfile:
+            fieldnames = ['Repository', 'Branch', 'Last Commit Date', 'Last Commit Author']
+            csv_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            # Write the header to the CSV file
+            csv_writer.writeheader()
+
+            # Iterate through repositories
+            for repo in repositories:
+                repo_name = repo['name']
+
+                # Get a list of branches for the repository
+                branch_url = f'https://api.github.com/repos/{organization}/{repo_name}/branches'
+                branch_response = requests.get(branch_url, headers=headers)
+
+                if branch_response.status_code == 200:
+                    branches = branch_response.json()
+
+                    # Iterate through branches and retrieve last commit info
+                    for branch in branches:
+                        branch_name = branch['name']
+                        commit_date, commit_author = get_last_commit_info(organization, repo_name, branch_name, access_token)
+
+                        # Write data to the CSV file
+                        csv_writer.writerow({
+                            'Repository': repo_name,
+                            'Branch': branch_name,
+                            'Last Commit Date': commit_date,
+                            'Last Commit Author': commit_author
+                        })
+
+        print(f'Data saved to {csv_filename}')
+    else:
+        print(f'Error: {response.status_code} - {response.text}')
+
+if __name__ == "__main__":
+    # Replace 'your_organization' with the actual organization name
+    organization_name = 'your_organization'
+
+    list_branches_with_last_commit_info(organization_name)
+
+
+
+
+-------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import os
+import requests
 from datetime import datetime, timedelta
 import pandas as pd
 
