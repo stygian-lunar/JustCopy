@@ -1,0 +1,181 @@
+config.toml
+
+file_locations = [
+  "/path/to/files/dir1",
+  "/path/to/files/dir2",
+  "/path/to/files/dir3"
+]
+
+archive_location = "/path/to/archive"
+older_than_days = 30
+
+
+
+fileutils.go
+
+package utils
+
+import (
+	"io"
+	"os"
+)
+
+// CopyFile copies a file from source to destination
+func CopyFile(src, dest string) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	return err
+}
+
+
+
+archive.go
+
+package archive
+
+import (
+	"archive/tar"
+	"compress/gzip"
+	"io"
+	"os"
+	"path/filepath"
+	"time"
+	"your_project_name/utils"
+)
+
+// ArchiveFiles archives files from source directories to destination in tar.gz format
+func ArchiveFiles(fileLocations []string, destination, prefix string, olderThanDays int) error {
+	for _, fileLocation := range fileLocations {
+		err := filepath.Walk(fileLocation, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			if time.Since(info.ModTime()).Hours() > float64(24*olderThanDays) {
+				archivePath := filepath.Join(destination, prefix+info.Name()+".tar.gz")
+
+				err := createTarGz(archivePath, path)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createTarGz(destination, source string) error {
+	destinationFile, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer destinationFile.Close()
+
+	gzw := gzip.NewWriter(destinationFile)
+	defer gzw.Close()
+
+	tw := tar.NewWriter(gzw)
+	defer tw.Close()
+
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+
+		header.Name = filepath.Join(filepath.Base(source), path[len(source):])
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(tw, file)
+		return err
+	})
+}
+
+
+main.go
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"your_project_name/archive"
+	"your_project_name/utils"
+	"github.com/BurntSushi/toml"
+)
+
+type Config struct {
+	FileLocations  []string `toml:"file_locations"`
+	ArchiveLocation string   `toml:"archive_location"`
+	OlderThanDays   int      `toml:"older_than_days"`
+}
+
+func main() {
+	// Load config
+	var config Config
+	if _, err := toml.DecodeFile("config/config.toml", &config); err != nil {
+		log.Fatal(err)
+	}
+
+	// Create archive directory if not exists
+	if err := os.MkdirAll(config.ArchiveLocation, os.ModePerm); err != nil {
+		log.Fatal(err)
+	}
+
+	// Archive files
+	prefix := "archive_" // You can customize the prefix
+	err := archive.ArchiveFiles(config.FileLocations, config.ArchiveLocation, prefix, config.OlderThanDays)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Example: Copy a file from the archive back to the original location
+	// This is just an example, you may need to handle retrieval in a more complex way
+	originalFile := "/path/to/files/dir1/example.txt"
+	retrievedFile := filepath.Join(config.ArchiveLocation, prefix+"example.txt.tar.gz")
+	err = utils.CopyFile(retrievedFile, originalFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Archival process completed successfully.")
+}
