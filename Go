@@ -1,3 +1,36 @@
+tar
+
+import os
+import tarfile
+import datetime
+
+def convert_to_tar_gz(archive_folder, last_modified_date, file_to_convert):
+    # Ensure the archive folder exists
+    if not os.path.exists(archive_folder):
+        print(f"Error: Archive folder '{archive_folder}' not found.")
+        return
+    
+    # Construct the output filename
+    file_name, file_extension = os.path.splitext(os.path.basename(file_to_convert))
+    output_filename = f"{file_name}_{os.path.basename(archive_folder)}_{last_modified_date}{file_extension}.tar.gz"
+    
+    # Create a tar.gz file
+    with tarfile.open(output_filename, "w:gz") as tar:
+        # Add the file to the tar.gz archive
+        tar.add(file_to_convert, arcname=os.path.basename(file_to_convert))
+    
+    print(f"Conversion successful. Output saved as '{output_filename}'.")
+
+# Example usage:
+archive_folder = "/path/to/archive"
+last_modified_date = "20220101"
+file_to_convert = "/path/to/file.txt"
+
+convert_to_tar_gz(archive_folder, last_modified_date, file_to_convert)
+
+
+
+
 config.toml
 
 file_locations = [
