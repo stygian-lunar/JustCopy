@@ -1,3 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        PYTHON_VERSION = '3.x.x'  // specify your Python version
+        POETRY_VERSION = '1.x.x'  // specify your Poetry version
+        NEXUS_REPO_URL = 'https://your-nexus-repo-url/repository/pypi-repo/'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Manually clone the repository
+                    sh 'git clone https://your-repo-url.git .'
+                }
+            }
+        }
+
+        stage('Set up Python') {
+            steps {
+                script {
+                    // Install Python
+                    sh 'curl -O https://www.python.org/ftp/python/${env.PYTHON_VERSION}/python-${env.PYTHON_VERSION}-amd64.exe'
+                    sh 'python-${env.PYTHON_VERSION}-amd64.exe /quiet'
+                }
+            }
+        }
+
+        stage('Install Poetry') {
+            steps {
+                script {
+                    // Install Poetry
+                    sh 'curl -sSL https://install.python-poetry.org | python -'
+                    sh 'source $HOME/.poetry/env'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    sh 'poetry install'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    sh 'poetry build'
+                }
+            }
+        }
+
+        stage('Publish to Nexus') {
+            steps {
+                script {
+                    sh "poetry publish --repository ${env.NEXUS_REPO_URL} --build"
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+-------------------------------
 import os
 import requests
 import csv
