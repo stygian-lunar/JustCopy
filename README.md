@@ -10,6 +10,80 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                checkout scm
+            }
+        }
+
+        stage('Set up Python') {
+            steps {
+                script {
+                    // Install Python
+                    sh 'pip install --upgrade pip'
+                    sh 'pip install virtualenv'
+                    sh 'virtualenv venv'
+                    sh 'source venv/bin/activate'
+                }
+            }
+        }
+
+        stage('Install Poetry') {
+            steps {
+                script {
+                    // Install Poetry
+                    sh 'pip install --upgrade poetry==${env.POETRY_VERSION}'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    sh 'poetry install'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    sh 'poetry build'
+                }
+            }
+        }
+
+        stage('Publish to Nexus') {
+            steps {
+                script {
+                    sh "poetry publish --repository ${env.NEXUS_REPO_URL} --build"
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+\\\\\\\\\\\\\\\\
+pipeline {
+    agent any
+
+    environment {
+        PYTHON_VERSION = '3.x.x'  // specify your Python version
+        POETRY_VERSION = '1.x.x'  // specify your Poetry version
+        NEXUS_REPO_URL = 'https://your-nexus-repo-url/repository/pypi-repo/'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
                 script {
                     // Manually clone the repository
                     sh 'git clone https://your-repo-url.git .'
