@@ -1,4 +1,30 @@
 
+# your_script.py
+import platform
+import pyswip
+
+def greet():
+    return "Hello, Python!"
+
+def get_system_info():
+    return f"Running on {platform.system()} {platform.release()}"
+
+def example_pyswip():
+    from pyswip import Prolog
+    prolog = Prolog()
+    prolog.assertz("father(john, jim)")
+    prolog.assertz("father(john, ann)")
+    list(prolog.query("father(john, X)"))  # Returns a generator
+
+if __name__ == "__main__":
+    print(greet())
+    print(get_system_info())
+    example_pyswip()
+
+
+
+
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
