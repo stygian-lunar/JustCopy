@@ -1,3 +1,11 @@
+sh 'echo "Username: $(JENNEXUS_USR)"'
+sh 'echo "Password: $(JENNEXUS_PSW)"'
+sh 'twine upload --repository-url https://nexus.example.com/repository/JENNEXUS/ dist/* -u $JENNEXUS_USR -p $JENNEXUS_PSW'
+
+
+
+
+
 import de.codecentric.boot.admin.server.domain.events.InstanceStatusChangedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.mail.SimpleMailMessage;
