@@ -1,3 +1,5 @@
+withCredentials step in Jenkins is part of the Credentials Binding Plugin. This plugin provides a way to securely inject credentials into various parts of your Jenkins job or pipeline, allowing you to access sensitive information such as usernames and passwords without exposing them directly in your scripts.
+
 
 withCredentials([usernamePassword(credentialsId: 'JENNEXUS', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
     twine upload --repository-url https://nexus.example.com/repository/JENNEXUS/ dist/*
