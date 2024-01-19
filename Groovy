@@ -1,3 +1,10 @@
+
+withCredentials([usernamePassword(credentialsId: 'JENNEXUS', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+    twine upload --repository-url https://nexus.example.com/repository/JENNEXUS/ dist/*
+}
+
+
+
 from setuptools import setup, find_packages
 
 setup(
