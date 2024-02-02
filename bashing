@@ -1,0 +1,15 @@
+#######python check
+
+#!/bin/bash
+
+zip_file="your_zip_file.zip"  # Replace with the actual ZIP file path
+
+# Check if there are any Python files in the ZIP file without extracting
+if zipinfo -1 "$zip_file" | grep -q '\.py$'; then
+    result=1  # True
+else
+    result=0  # False
+fi
+
+# Return the result
+exit "$result"
