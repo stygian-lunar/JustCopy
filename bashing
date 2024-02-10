@@ -13,3 +13,21 @@ fi
 
 # Return the result
 exit "$result"
+
+
+
+
+
+
+
+---------------------------------------------
+- name: Fetch GitHub repositories
+  github_repository:
+    organization: "your_organization"
+    token: "your_github_token"
+  register: github_repos
+
+- name: Register GitHub repositories as a fact
+  set_fact:
+    repo_list: "{{ github_repos.repositories | map(attribute='full_name') | list }}"
+
