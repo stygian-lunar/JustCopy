@@ -50,17 +50,15 @@ WHERE property != '' AND property NOT LIKE '#%';
 
 
 
+CREATE TABLE application_properties (
+    key VARCHAR(255),
+    value VARCHAR(255)
+);
 
-INSERT INTO table_config (application, profile, label, `key`, `value`)
-SELECT 'A' AS application, 'B' AS profile, 'C' AS label,
-       SUBSTRING_INDEX(SUBSTRING_INDEX(properties.property, '=', 1), '=', -1) AS `key`,
-       SUBSTRING_INDEX(SUBSTRING_INDEX(properties.property, '=', -1), '=', 1) AS `value`
-FROM (
-    SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(@properties, '\n', n.digit+1), '\n', -1) AS property
-    FROM (
-        SELECT 0 AS digit UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-    ) AS n
-    WHERE n.digit < LENGTH(@properties) - LENGTH(REPLACE(@properties, '\n', ''))
-) AS properties
-WHERE properties.property != '' AND properties.property NOT LIKE '#%';
+
+LOAD DATA INFILE '/path/to/application.properties' 
+INTO TABLE application_properties
+FIELDS TERMINATED BY '='
+LINES TERMINATED BY '\n'
+(key, value);
 
