@@ -79,3 +79,25 @@ FROM (
 WHERE properties.property != '' AND properties.property NOT LIKE '#%';
 
 
+
+
+
+
+
+VARIABLE properties CLOB;
+BEGIN
+    :properties := DBMS_LOB.SUBSTR(BFILENAME('DIRECTORY_NAME', 'application.properties'), DBMS_LOB.GETLENGTH(BFILENAME('DIRECTORY_NAME', 'application.properties')));
+END;
+/
+
+
+
+INSERT INTO table_config (application, profile, label, `key`, `value`)
+SELECT 'A' AS application, 'B' AS profile, 'C' AS label,
+       SUBSTRING_INDEX(SUBSTRING_INDEX(:properties, '\n', n.digit+1), '\n', -1) AS `key`,
+       SUBSTRING_INDEX(SUBSTRING_INDEX(:properties, '\n', n.digit+1), '\n', -1) AS `value`
+FROM (
+    SELECT 0 AS digit UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+) AS n
+WHERE n.digit < LENGTH(:properties) - LENGTH(REPLACE(:properties, '\n', ''));
+
