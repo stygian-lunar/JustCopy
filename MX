@@ -1,1 +1,48 @@
-hi
+
+import com.prowidesoftware.iso20022.camt.Camt05100105;
+import com.prowidesoftware.iso20022.camt.ObjectFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class JsonToMXConverter {
+    public static void main(String[] args) throws Exception {
+        // Step 1: Parse JSON into Java object using Jackson
+        String jsonString = "{\"orderId\": \"123456789\", \"customerName\": \"John Doe\", \"amount\": 1000.00}";
+        ObjectMapper objectMapper = new ObjectMapper();
+        OrderConfirmation orderConfirmation = objectMapper.readValue(jsonString, OrderConfirmation.class);
+
+        // Step 2: Create a new Camt05100105 object using ObjectFactory
+        ObjectFactory factory = new ObjectFactory();
+        Camt05100105 camt05100105 = factory.createCamt05100105();
+
+        // Step 3: Populate the MX message object with JSON data
+        Camt05100105.GrpHdr grpHdr = factory.createCamt05100105GrpHdr();
+        grpHdr.setMsgId(orderConfirmation.getOrderId());
+        camt05100105.setGrpHdr(grpHdr);
+
+        // Add more elements as needed...
+
+        // Step 4: Serialize the MX message object to XML
+        String xml = marshal(camt05100105);
+        System.out.println("XML MX message:\n" + xml);
+    }
+
+    // Helper method to serialize object to XML
+    private static String marshal(Object obj) {
+        // Implementation details omitted
+        return ""; // Return XML string
+    }
+}
+
+// Define OrderConfirmation class
+class OrderConfirmation {
+    private String orderId;
+    private String customerName;
+    private double amount;
+
+    // Getters and setters omitted for brevity
+}
+
+
+
+
+
