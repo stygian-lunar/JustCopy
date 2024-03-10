@@ -46,3 +46,35 @@ class OrderConfirmation {
 
 
 
+
+Input (JSON):
+
+json
+Copy code
+{
+  "orderId": "123456789",
+  "customerName": "John Doe",
+  "amount": 1000.00
+}
+
+
+Output (XML MX message):
+
+xml
+Copy code
+<?xml version="1.0" encoding="UTF-8"?>
+<ns3:Document xmlns:ns2="urn:iso:std:iso:20022:tech:xsd:camt.051.001.05" xmlns:ns3="urn:iso:std:iso:20022:tech:xsd:camt.051.001.05">
+    <ns3:GrpHdr>
+        <ns3:MsgId>123456789</ns3:MsgId>
+    </ns3:GrpHdr>
+</ns3:Document>
+
+
+
+Explanation:
+
+The JSON input represents an order confirmation message with an orderId, customerName, and amount.
+The code parses this JSON input into a Java object using Jackson's ObjectMapper.
+It then creates an MX message object of type Camt05100105 using the Prowide ISO 20022 ObjectFactory.
+The MsgId field of the group header (GrpHdr) of the MX message is set to the orderId from the JSON.
+The MX message object is then serialized to XML format.
