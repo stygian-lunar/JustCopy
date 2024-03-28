@@ -1,0 +1,24 @@
+
+const jwt = require('jsonwebtoken');
+
+// Your JWT payload
+const payload = {
+  // Add your payload data here
+  username: 'example_user',
+  role: 'admin',
+};
+
+// Your JWT secret key
+const secretKey = 'your_secret_key';
+
+// JWT options (optional)
+const options = {
+  expiresIn: '1h', // token expiration time
+  algorithm: 'HS256', // algorithm used to sign the token
+};
+
+// Generate the JWT token
+const token = jwt.sign(payload, secretKey, options);
+
+// Set the token in the request headers
+pm.environment.set('jwt_token', token);
