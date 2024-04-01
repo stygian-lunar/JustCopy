@@ -119,3 +119,56 @@ public class Main {
         }
     }
 }
+
+
+
+
+
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.*;
+
+@SpringBootApplication
+public class Main {
+
+    @Value("${itm.response.versions}") // Injects value from application.properties into responseVersionsProperty
+    private String responseVersionsProperty;
+
+    private static Map<String, Set<String>> allowedVersionsMap;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class, args); // Runs the Spring Boot application
+        allowedVersionsMap = parsePropertyIntoMap(responseVersionsProperty); // Parses property into map
+        System.out.println("Allowed Versions Map: " + allowedVersionsMap); // Prints the map
+    }
+
+    // Method to parse property from application.properties into the map
+    private static Map<String, Set<String>> parsePropertyIntoMap(String propertyValue) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String[]> map = objectMapper.readValue(propertyValue, Map.class);
+            
+            return map.entrySet().stream()
+                    .collect(
+                        HashMap::new,
+                        (m, e) -> {
+                            if (e.getValue().length > 0) {
+                                m.put(e.getKey(), new HashSet<>(Arrays.asList(e.getValue())));
+                            } else {
+                                m.put(e.getKey(), Collections.emptySet());
+                            }
+                        },
+                        HashMap::putAll
+                    );
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle exception appropriately (e.g., logging)
+            return Collections.emptyMap();
+        }
+    }
+}
+
