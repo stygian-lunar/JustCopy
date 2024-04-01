@@ -22,3 +22,41 @@ const token = jwt.sign(payload, secretKey, options);
 
 // Set the token in the request headers
 pm.environment.set('jwt_token', token);
+
+
+
+
+
+
+
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        String dataString = "{Ford:(\"1\",\"2\",\"3\"), Gc:(\"7\",\"8\")}";
+
+        // Remove the curly braces
+        dataString = dataString.substring(1, dataString.length() - 1);
+
+        // Split the string by comma and colon to separate keys and values
+        String[] pairs = dataString.split(", ");
+
+        // Create a HashMap to store the data
+        Map<String, List<String>> dataMap = new HashMap<>();
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":");
+            String key = keyValue[0].trim();
+            String[] valuesArray = keyValue[1].substring(1, keyValue[1].length() - 1).split(",");
+            List<String> valuesList = new ArrayList<>();
+
+            for (String value : valuesArray) {
+                valuesList.add(value.trim().replaceAll("\"", ""));
+            }
+
+            dataMap.put(key, valuesList);
+        }
+
+        System.out.println(dataMap);
+    }
+}
