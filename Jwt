@@ -203,3 +203,33 @@ public class Main {
         }
         return map;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Map<String, String[]> itmResponseMap() {
+        Map<String, String[]> resultMap = new HashMap<>();
+
+        // Split the string by colon and remove curly braces
+        Stream.of(itmResponse.split(":"))
+                // Trim quotes from keys and values
+                .map(entry -> entry.replaceAll("[\"{}]", "").trim())
+                // Split the string by comma
+                .map(entry -> entry.split(","))
+                // Map key-value pairs
+                .forEach(pair -> resultMap.put(pair[0], pair[1].split(",")));
+
+        return resultMap;
+    }
+
