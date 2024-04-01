@@ -172,3 +172,34 @@ public class Main {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public HashMap<String, String[]> itmResponseMap() {
+        HashMap<String, String[]> map = new HashMap<>();
+        try {
+            // Remove surrounding braces and split by comma and colon
+            String[] keyValuePairs = itmResponse.substring(1, itmResponse.length() - 1).split(",");
+            for (String pair : keyValuePairs) {
+                String[] entry = pair.split(":");
+                // Trim quotes from keys and values
+                String key = entry[0].trim().replaceAll("\"", "");
+                String[] values = entry[1].trim().replaceAll("\"", "").replaceAll("\\{", "").replaceAll("\\}", "").split("\\|");
+                map.put(key, values);
+            }
+        } catch (Exception e) {
+            // Handle parsing exception
+            e.printStackTrace();
+        }
+        return map;
+    }
