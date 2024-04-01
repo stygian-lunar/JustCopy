@@ -60,3 +60,62 @@ public class Main {
         System.out.println(dataMap);
     }
 }
+
+
+
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.util.*;
+
+@SpringBootApplication
+public class Main {
+
+    @Value("${itm.response.versions}")
+    private String responseVersionsProperty;
+
+    private static Map<String, Set<String>> allowedVersionsMap = new HashMap<>();
+
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class, args);
+    }
+
+    // Method to parse property from application.properties into the map
+    private static void parsePropertyIntoMap(String propertyValue) {
+        // Remove curly braces
+        String content = propertyValue.substring(1, propertyValue.length() - 1);
+
+        // Split by comma and colon
+        String[] parts = content.split(",\\s*");
+
+        for (String part : parts) {
+            String[] keyValue = part.split(":");
+            String key = keyValue[0].trim().replaceAll("\"", "");
+            String[] versions = keyValue[1].split(",");
+            Set<String> versionSet = new HashSet<>(Arrays.asList(versions));
+            allowedVersionsMap.put(key, versionSet);
+        }
+    }
+
+    // Method to generate response and validate the response version
+    private void generateResponse(String userId, String productCode, String responseVersion) {
+        // Check if product code exists in the map
+        if (allowedVersionsMap.containsKey(productCode)) {
+            // Get allowed versions for the product code
+            Set<String> allowedVersions = allowedVersionsMap.get(productCode);
+            // Check if response version is allowed
+            if (allowedVersions.contains(responseVersion)) {
+                // Response version is valid, proceed with storing the response in the database
+                System.out.println("Response version is valid. Storing response in the database...");
+                // Your logic to store response in the database goes here
+            } else {
+                // Invalid response version, throw exception
+                throw new IllegalArgumentException("Invalid response version for product code: " + productCode);
+            }
+        } else {
+            // Product code not found in the map, throw exception
+            throw new IllegalArgumentException("Product code not found: " + productCode);
+        }
+    }
+}
