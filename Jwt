@@ -254,3 +254,38 @@ public Map<String, String[]> itmResponseMap() {
         return resultMap;
     }
 
+
+
+
+
+
+
+
+
+
+
+ public static Map<String, Set<String>> convert(String input) {
+        Map<String, Set<String>> resultMap = new HashMap<>();
+
+        // Remove leading and trailing curly braces
+        input = input.substring(1, input.length() - 1);
+
+        // Split by comma to get key-value pairs
+        String[] pairs = input.split(",");
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":");
+
+            String key = keyValue[0].trim();
+            String[] values = keyValue[1].split(","); // No need to replace quotes here
+
+            Set<String> valueSet = new HashSet<>();
+            for (String value : values) {
+                valueSet.add(value.trim());
+            }
+
+            resultMap.put(key, valueSet);
+        }
+
+        return resultMap;
+    }
