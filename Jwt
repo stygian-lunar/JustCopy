@@ -207,18 +207,7 @@ public class Main {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-    public Map<String, String[]> itmResponseMap() {
+public Map<String, String[]> itmResponseMap() {
         Map<String, String[]> resultMap = new HashMap<>();
 
         // Split the string by colon and remove curly braces
@@ -229,6 +218,38 @@ public class Main {
                 .map(entry -> entry.split(","))
                 // Map key-value pairs
                 .forEach(pair -> resultMap.put(pair[0], pair[1].split(",")));
+
+        return resultMap;
+    }
+
+
+
+
+
+
+
+    public static Map<String, Set<String>> convert(String input) {
+        // Remove curly braces and whitespace
+        input = input.replaceAll("\\{|\\}", "").trim();
+
+        Map<String, Set<String>> resultMap = new HashMap<>();
+
+        // Split by commas to get key-value pairs
+        String[] pairs = input.split(",");
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":");
+
+            String key = keyValue[0].trim();
+            String[] values = keyValue[1].replaceAll("\"", "").split(",");
+
+            Set<String> valueSet = new HashSet<>();
+            for (String value : values) {
+                valueSet.add(value.trim());
+            }
+
+            resultMap.put(key, valueSet);
+        }
 
         return resultMap;
     }
