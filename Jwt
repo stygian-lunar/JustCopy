@@ -289,3 +289,34 @@ public Map<String, String[]> itmResponseMap() {
 
         return resultMap;
     }
+
+
+
+
+public static Map<String, Set<String>> convert(String input) {
+        Map<String, Set<String>> resultMap = new HashMap<>();
+
+        // Remove leading and trailing curly braces
+        input = input.substring(1, input.length() - 1);
+
+        // Split by comma to get key-value pairs
+        String[] pairs = input.split(",");
+
+        for (String pair : pairs) {
+            // Split each pair by colon
+            String[] keyValue = pair.split(":", 2); // Limit to 2 to handle colons in values
+
+            String key = keyValue[0].trim();
+            String[] values = keyValue[1].split(",");
+
+            Set<String> valueSet = new HashSet<>();
+            for (String value : values) {
+                // Remove surrounding double quotes from each value
+                valueSet.add(value.replaceAll("\"", "").trim());
+            }
+
+            resultMap.put(key, valueSet);
+        }
+
+        return resultMap;
+    }
