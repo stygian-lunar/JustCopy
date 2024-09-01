@@ -1,0 +1,25 @@
+// server.js
+const express = require('express');
+const { exec } = require('child_process');
+const app = express();
+const port = 3000;
+
+app.get('/run-command', (req, res) => {
+    exec('ls -la', (error, stdout, stderr) => {
+        if (error) {
+            res.status(500).send(`Error: ${error.message}`);
+            return;
+        }
+
+        if (stderr) {
+            res.status(500).send(`Stderr: ${stderr}`);
+            return;
+        }
+
+        res.send(`<pre>${stdout}</pre>`);
+    });
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
