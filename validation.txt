@@ -229,6 +229,174 @@ public class LambdaValidation {
 
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+import java.util.stream.Stream;
+
+public class StreamValidation {
+
+    public static boolean validateJson(String jsonString) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(jsonString);
+
+            // Map of fields with their expected values
+            Map<String, String> conditions = Map.of(
+                "ordstscd", "PACK",
+                "fund_in", "PRPD",
+                "txn_ty", "SUBS",
+                "ord_status", "NEWM",
+                "inst_ty", "ISIN"
+            );
+
+            // Validate all conditions with the check for non-null
+            boolean conditionsValid = conditions.entrySet()
+                    .stream()
+                    .allMatch(entry -> {
+                        JsonNode field = rootNode.path(entry.getKey());
+                        return field.isMissingNode() ? false : entry.getValue().equals(field.asText());
+                    });
+
+            // Validate mandatory fields (existence and non-null)
+            boolean mandatoryFieldsValid = Stream.of("ORD_CURR", "ord_amount", "ins_id", "cust_id")
+                    .allMatch(field -> rootNode.hasNonNull(field));
+
+            // Additional custom validations
+            boolean customValidations = Stream.of(
+                () -> {
+                    String custId = rootNode.path("cust_id").asText();
+                    return custId != null && !custId.isEmpty() && custId.matches("\\d+");
+                },
+                () -> {
+                    String someField = rootNode.path("some_other_field").asText();
+                    return "EXPECTED_VALUE".equals(someField);
+                }
+            ).allMatch(Validation::execute);
+
+            // Combine all validations
+            return conditionsValid && mandatoryFieldsValid && customValidations;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @FunctionalInterface
+    interface Validation {
+        boolean validate();
+
+        static boolean execute(Validation validation) {
+            return validation.validate();
+        }
+    }
+
+    public static void main(String[] args) {
+        String jsonString = """
+        {
+            "ordstscd": "PACK",
+            "fund_in": "PRPD",
+            "txn_ty": "SUBS",
+            "ORD_CURR": "USD",
+            "ord_amount": "1000",
+            "ord_status": "NEWM",
+            "inst_ty": "ISIN",
+            "ins_id": "123456",
+            "cust_id": "987654",
+            "some_other_field": "EXPECTED_VALUE"
+        }
+        """;
+
+        boolean isValid = validateJson(jsonString);
+        System.out.println("Is JSON valid? " + isValid);
+    }
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.List;
+
+public class LambdaValidation {
+
+    public static boolean validateJson(String jsonString) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(jsonString);
+
+            // Lambda-based validation rules
+            List<Boolean> results = List.of(
+                (() -> {
+                    JsonNode node = rootNode.path("ordstscd");
+                    return !node.isMissingNode() && "PACK".equals(node.asText());
+                }).call(),
+                (() -> {
+                    JsonNode node = rootNode.path("fund_in");
+                    return !node.isMissingNode() && "PRPD".equals(node.asText());
+                }).call(),
+                (() -> {
+                    JsonNode node = rootNode.path("txn_ty");
+                    return !node.isMissingNode() && "SUBS".equals(node.asText());
+                }).call(),
+                (() -> rootNode.hasNonNull("ORD_CURR")).call(),
+                (() -> rootNode.hasNonNull("ord_amount")).call(),
+                (() -> {
+                    JsonNode node = rootNode.path("ord_status");
+                    return !node.isMissingNode() && "NEWM".equals(node.asText());
+                }).call(),
+                (() -> {
+                    JsonNode node = rootNode.path("inst_ty");
+                    return !node.isMissingNode() && "ISIN".equals(node.asText());
+                }).call(),
+                (() -> rootNode.hasNonNull("ins_id")).call(),
+                (() -> rootNode.hasNonNull("cust_id")).call(),
+                (() -> {
+                    // Custom check for cust_id
+                    JsonNode node = rootNode.path("cust_id");
+                    return node.hasNonNull() && node.asText().matches("\\d+");
+                }).call(),
+                (() -> {
+                    // Custom check for some_other_field
+                    JsonNode node = rootNode.path("some_other_field");
+                    return !node.isMissingNode() && "EXPECTED_VALUE".equals(node.asText());
+                }).call()
+            );
+
+            // Aggregate results
+            return results.stream().allMatch(result -> result);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static void main(String[] args) {
+        String jsonString = """
+        {
+            "ordstscd": "PACK",
+            "fund_in": "PRPD",
+            "txn_ty": "SUBS",
+            "ORD_CURR": "USD",
+            "ord_amount": "1000",
+            "ord_status": "NEWM",
+            "inst_ty": "ISIN",
+            "ins_id": "123456",
+            "cust_id": "987654",
+            "some_other_field": "EXPECTED_VALUE"
+        }
+        """;
+
+        boolean isValid = validateJson(jsonString);
+        System.out.println("Is JSON valid? " + isValid);
+    }
+}
 
 
 
