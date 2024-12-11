@@ -1,0 +1,86 @@
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+import java.util.stream.Stream;
+
+public class StreamValidation {
+    public static boolean validateJson(String jsonString) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(jsonString);
+
+            Map<String, String> conditions = Map.of(
+                "ordstscd", "PACK",
+                "fund_in", "PRPD",
+                "txn_ty", "SUBS",
+                "ord_status", "NEWM",
+                "inst_ty", "ISIN"
+            );
+
+            // Validate all conditions with streams
+            boolean conditionsValid = conditions.entrySet()
+                    .stream()
+                    .allMatch(entry -> entry.getValue().equals(rootNode.path(entry.getKey()).asText()));
+
+            boolean mandatoryFieldsValid = Stream.of("ORD_CURR", "ord_amount", "ins_id", "cust_id")
+                    .allMatch(field -> rootNode.hasNonNull(field));
+
+            return conditionsValid && mandatoryFieldsValid;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+
+
+
+
+
+
+/////////////////////////////////
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.function.Predicate;
+import java.util.Map;
+
+public class RuleBasedValidation {
+    public static boolean validateJson(String jsonString) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(jsonString);
+
+            // Define rules as predicates
+            Map<String, Predicate<JsonNode>> rules = Map.of(
+                "ordstscd", node -> "PACK".equals(node.path("ordstscd").asText()),
+                "fund_in", node -> "PRPD".equals(node.path("fund_in").asText()),
+                "txn_ty", node -> "SUBS".equals(node.path("txn_ty").asText()),
+                "ORD_CURR", node -> node.hasNonNull("ORD_CURR"),
+                "ord_amount", node -> node.hasNonNull("ord_amount"),
+                "ord_status", node -> "NEWM".equals(node.path("ord_status").asText()),
+                "inst_ty", node -> "ISIN".equals(node.path("inst_ty").asText()),
+                "ins_id", node -> node.hasNonNull("ins_id"),
+                "cust_id", node -> node.hasNonNull("cust_id")
+            );
+
+            // Validate all rules
+            return rules.values().stream().allMatch(rule -> rule.test(rootNode));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
