@@ -1,0 +1,66 @@
+import com.prowidesoftware.swift.model.mx.MxSeev03100114;
+import com.prowidesoftware.swift.model.mx.dic.*;
+import com.prowidesoftware.swift.model.mt.mt5xx.MT564;
+import com.prowidesoftware.swift.model.field.*;
+
+public class Seev031ToMT564 {
+    public static void main(String[] args) {
+        // Sample seev.031.001.14 XML (Replace with actual message)
+        String seev031Xml = """
+                <Document xmlns="urn:iso:std:iso:20022:tech:xsd:seev.031.001.14">
+                    <CorpActnNtfctn>
+                        <NtfctnId>
+                            <Id>CA123456789</Id>
+                        </NtfctnId>
+                        <CorpActnGnlInf>
+                            <CorpActnEvtId>EVT20250213</CorpActnEvtId>
+                            <EvtTp>
+                                <Cd>DVCA</Cd>
+                            </EvtTp>
+                        </CorpActnGnlInf>
+                        <AcctDtls>
+                            <Id>
+                                <SctiesAcctId>123456789</SctiesAcctId>
+                            </Id>
+                        </AcctDtls>
+                        <CorpActnDtls>
+                            <ElgblBal>
+                                <Qty>
+                                    <Amt>1000.00</Amt>
+                                </Qty>
+                            </ElgblBal>
+                        </CorpActnDtls>
+                    </CorpActnNtfctn>
+                </Document>
+                """;
+
+        // Parse the MX message
+        MxSeev03100114 mxMessage = MxSeev03100114.parse(seev031Xml);
+
+        // Extract the corporate action notification details
+        CorporateActionNotificationV14 notification = mxMessage.getCorpActnNtfctn();
+        CorporateActionGeneralInformation154 generalInfo = notification.getCorpActnGnlInf();
+
+        String corporateActionId = notification.getNtfctnId().getId();
+        String eventType = generalInfo.getEvtTp().getCd(); // Extracting event type code
+        String eventId = generalInfo.getCorpActnEvtId();
+        
+        // Extract securities account ID
+        String securitiesAccount = notification.getAcctDtls().getId().getSctiesAcctId();
+
+        // Extract eligible balance amount
+        String eligibleBalance = notification.getCorpActnDtls().getElgblBal().getQty().getAmt().toString();
+
+        // Create an MT564 message manually
+        MT564 mt564 = new MT564();
+        mt564.append(new Field20(corporateActionId)); // Corporate Action Reference
+        mt564.append(new Field22F(":EVTP//" + eventType)); // Event Type
+        mt564.append(new Field98C(":EFFE//20250213")); // Event Effective Date
+        mt564.append(new Field97A(":SAFE//" + securitiesAccount)); // Securities Account
+        mt564.append(new Field19A(":ELIG//" + eligibleBalance)); // Eligible Balance Amount
+        mt564.append(new Field35B("Corporate Action Event Notification"));
+
+        // Print converted MT 564 message
+        System.out.println(mt564.message());
+    }
+}
