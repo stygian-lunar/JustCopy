@@ -78,3 +78,24 @@ The code parses this JSON input into a Java object using Jackson's ObjectMapper.
 It then creates an MX message object of type Camt05100105 using the Prowide ISO 20022 ObjectFactory.
 The MsgId field of the group header (GrpHdr) of the MX message is set to the orderId from the JSON.
 The MX message object is then serialized to XML format.
+
+
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+@Component
+public class PropChecker {
+
+    // Injecting the property and parsing it into a Map<String, Set<String>> using SpEL
+    @Value("#{${Prop}.entrySet().stream().collect(toMap(e -> e.key, e -> T(java.util.Set).of(e.value.split(','))))}")
+    private Map<String, Set<String>> propMap;
+
+    public boolean containsValue(String key, String number) {
+        return propMap.containsKey(key) && propMap.get(key).contains(number);
+    }
+}
