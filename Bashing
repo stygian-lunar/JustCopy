@@ -65,3 +65,38 @@ while true; do
     done
     sleep 2
 done
+
+
+
+
+#!/bin/bash
+
+# === CONFIGURATION ===
+WATCH_DIRS=(
+    "/path/to/inbox1"
+    "/path/to/inbox2"
+)
+OUTBOX_DIR="/path/to/outbox"
+LOG_FILE="/tmp/filewatcher_inotify.log"
+
+# Create outbox and log file if missing
+mkdir -p "$OUTBOX_DIR"
+touch "$LOG_FILE"
+
+# Prepare directories for inotifywait (space-separated)
+WATCH_PATHS="${WATCH_DIRS[*]}"
+
+# Start watching for new files (CREATE events)
+inotifywait -m -e create --format '%w%f' $WATCH_PATHS | while read NEWFILE
+do
+    # Ensure it's a regular file
+    if [[ -f "$NEWFILE" ]]; then
+        FILE_NAME=$(basename "$NEWFILE")
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        NEW_NAME="${TIMESTAMP}_${FILE_NAME}"
+        DEST_PATH="$OUTBOX_DIR/$NEW_NAME"
+
+        mv "$NEWFILE" "$DEST_PATH"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') MOVED: $NEWFILE -> $DEST_PATH" >> "$LOG_FILE"
+    fi
+done
