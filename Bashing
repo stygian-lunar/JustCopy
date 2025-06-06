@@ -143,3 +143,68 @@ while true; do
     done
     sleep 2
 done
+
+
+
+
+
+
+
+#!/bin/bash
+
+# === CONFIGURATION ===
+WATCH_DIRS=(
+    "/home/ankita/Seeker1"
+    "/home/ankita/Seeker2"
+)
+OUTBOX_DIR="/home/ankita/Vault"
+LOG_DIR="/tmp/seeker_logs"
+TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+LOG_FILE="$LOG_DIR/seeker_$TIMESTAMP.log"
+
+# === SETUP ===
+mkdir -p "$OUTBOX_DIR"
+mkdir -p "$LOG_DIR"
+touch "$LOG_FILE"
+
+# Enable case-insensitive pattern matching
+shopt -s nocasematch
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: Seeker watcher started. Watching ${#WATCH_DIRS[@]} folders." >> "$LOG_FILE"
+
+# === MAIN LOOP ===
+while true; do
+    for DIR in "${WATCH_DIRS[@]}"; do
+        if [ ! -d "$DIR" ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARN: Directory not found: $DIR" >> "$LOG_FILE"
+            continue
+        fi
+
+        for FILE in "$DIR"/*; do
+            # Skip if not a regular file or if it is a symlink
+            [[ -f "$FILE" && ! -L "$FILE" ]] || continue
+
+            # Check for .csv files (case-insensitive)
+            if [[ "$FILE" == *.csv ]]; then
+                FILE_NAME=$(basename "$FILE")
+
+                # Validate filename: only letters, numbers, underscore, hyphen, dot allowed
+                if [[ ! "$FILE_NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARN: Unsafe filename skipped: $FILE_NAME" >> "$LOG_FILE"
+                    continue
+                fi
+
+                NOW=$(date +%Y%m%d_%H%M%S)
+                NEW_NAME="${NOW}_${FILE_NAME}"
+                DEST_PATH="$OUTBOX_DIR/$NEW_NAME"
+
+                if mv "$FILE" "$DEST_PATH"; then
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] MOVED: $FILE -> $DEST_PATH" >> "$LOG_FILE"
+                else
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: Failed to move $FILE" >> "$LOG_FILE"
+                fi
+            fi
+        done
+    done
+    sleep 2
+done
