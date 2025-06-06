@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# === CONFIGURATION ===
+WATCH_DIRS=(
+    "/path/to/folder1"
+    "/path/to/folder2"
+)
+SEEN_LOG="/tmp/filewatcher_seen.log"
+
+# === SETUP ===
+touch "$SEEN_LOG"
+echo "Watching for new files..."
+echo "Tracking seen files in: $SEEN_LOG"
+
+# === MAIN LOOP ===
+while true; do
+    for DIR in "${WATCH_DIRS[@]}"; do
+        [ -d "$DIR" ] || continue
+        for FILE in "$DIR"/*; do
+            [[ -f "$FILE" ]] || continue
+
+            if ! grep -Fxq "$FILE" "$SEEN_LOG"; then
+                echo "📂 New file detected: $FILE"
+                echo "$FILE" >> "$SEEN_LOG"
+            fi
+        done
+    done
+    sleep 2
+done
