@@ -27,3 +27,41 @@ while true; do
     done
     sleep 2
 done
+
+
+
+
+
+
+#!/bin/bash
+
+# === CONFIGURATION ===
+WATCH_DIRS=(
+    "/path/to/inbox1"
+    "/path/to/inbox2"
+)
+OUTBOX_DIR="/path/to/outbox"
+LOG_FILE="/tmp/filewatcher.log"
+
+# === SETUP ===
+mkdir -p "$OUTBOX_DIR"
+touch "$LOG_FILE"
+
+# === MAIN LOOP ===
+while true; do
+    for DIR in "${WATCH_DIRS[@]}"; do
+        [ -d "$DIR" ] || continue
+        for FILE in "$DIR"/*; do
+            [[ -f "$FILE" ]] || continue
+
+            FILE_NAME=$(basename "$FILE")
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            NEW_NAME="${TIMESTAMP}_${FILE_NAME}"
+            DEST_PATH="$OUTBOX_DIR/$NEW_NAME"
+
+            mv "$FILE" "$DEST_PATH"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') MOVED: $FILE -> $DEST_PATH" >> "$LOG_FILE"
+        done
+    done
+    sleep 2
+done
