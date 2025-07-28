@@ -65,3 +65,53 @@ public class ItemValidator {
     }
 }
 
+
+
+
+
+
+
+public boolean validateItem(Order item) {
+    return Optional.ofNullable(item)
+            .filter(i -> {
+                boolean allowed = config.getAllowedInstCodes().contains(i.getInstCode());
+                LOGGER.info("Institution code check for '" + i.getInstCode() + "': " + allowed);
+                return allowed;
+            })
+            .map(Order::getTordval)
+            .filter(tordval -> {
+                boolean allMatch = config.getCompareMap().entrySet().stream()
+                        .allMatch(e -> {
+                            String actual = tordval.get(e.getKey());
+                            boolean match = e.getValue().equals(actual);
+                            LOGGER.info("CompareMap Check - Key: '" + e.getKey() +
+                                    "', Expected: '" + e.getValue() +
+                                    "', Actual: '" + actual +
+                                    "', Match: " + match);
+                            return match;
+                        });
+                if (!allMatch) LOGGER.warning("CompareMap validation failed.");
+                return allMatch;
+            })
+            .filter(tordval -> {
+                boolean allPresent = config.getMandatoryKeys().stream()
+                        .allMatch(k -> {
+                            String val = tordval.get(k);
+                            boolean valid = val != null && !val.isBlank();
+                            LOGGER.info("Mandatory Field Check - Key: '" + k +
+                                    "', Value: '" + val +
+                                    "', Valid: " + valid);
+                            return valid;
+                        });
+                if (!allPresent) LOGGER.warning("Mandatory key validation failed.");
+                return allPresent;
+            })
+            .map(tordval -> {
+                LOGGER.info("All checks passed. Calling API for final indicator check...");
+                return callApiAndCheckIndicator(item);
+            })
+            .orElseGet(() -> {
+                LOGGER.warning("Validation failed at one or more stages.");
+                return false;
+            });
+}
