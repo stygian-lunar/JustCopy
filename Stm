@@ -1,0 +1,67 @@
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class ItemValidator {
+
+    @Value("${compare.map}")
+    private String compareMapStr;
+
+    @Value("${mandatory.keys}")
+    private String mandatoryKeysStr;
+
+    @Value("${allowed.instcodes}")
+    private String allowedInstCodesStr;
+
+    @Value("${external.api.url}")
+    private String apiUrl;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public boolean validateItem(Item item) {
+        Map<String, String> compareMap = Arrays.stream(compareMapStr.split(","))
+                .map(kv -> kv.split(":", 2))
+                .filter(kv -> kv.length == 2)
+                .collect(Collectors.toMap(kv -> kv[0].trim(), kv -> kv[1].trim()));
+
+        List<String> mandatoryKeys = Arrays.stream(mandatoryKeysStr.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+
+        List<String> allowedInstCodes = Arrays.stream(allowedInstCodesStr.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .collect(Collectors.toList());
+
+        return Optional.ofNullable(item)
+                .filter(i -> allowedInstCodes.contains(
+                        Optional.ofNullable(i.getInstCode()).orElse("").toUpperCase()))
+                .map(Item::getTordval)
+                .filter(tordval -> mandatoryKeys.stream()
+                        .allMatch(k -> Optional.ofNullable(tordval.get(k))
+                                .filter(v -> !v.isBlank()).isPresent()))
+                .filter(tordval -> compareMap.entrySet().stream()
+                        .allMatch(e -> e.getValue().equals(tordval.get(e.getKey()))))
+                .map(tordval -> callApiAndCheckIndicator(item))
+                .orElse(false);
+    }
+
+    private boolean callApiAndCheckIndicator(Item item) {
+        try {
+            String jsonResponse = restTemplate.postForObject(apiUrl, item, String.class);
+            JsonNode jsonNode = objectMapper.readTree(jsonResponse);
+            return jsonNode.path("indicator").asBoolean(false);
+        } catch (Exception e) {
+            // Optional: log the error
+            return false;
+        }
+    }
+}
+
