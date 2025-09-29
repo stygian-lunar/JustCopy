@@ -20,3 +20,43 @@ public class WatcherSchedulerConfig {
         }
     }
 }
+
+
+
+
+
+
+
+@Configuration
+public class WatcherSchedulerConfig {
+
+    @Autowired
+    private JobScheduler jobScheduler;
+
+    @Autowired
+    private ExpiryWatcherDao dao;
+
+    @Autowired
+    private SolacePublisherService publisher;
+
+    @Autowired
+    private WatcherProperties watcherProperties;
+
+    @PostConstruct
+    public void init() {
+        // Schedule all watchers after all beans are injected
+        for (WatcherProperties.WatcherConfig config : watcherProperties.getConfigs()) {
+            GenericWatcherJob watcherJob = new GenericWatcherJob(dao, jobScheduler, publisher, config);
+
+            if (!config.isEnabled()) continue; // Skip disabled watchers
+
+            jobScheduler.scheduleRecurrently(
+                    config.getName(),
+                    Cron.parse(config.getCron()),
+                    watcherJob::runWatcher
+            );
+
+            System.out.println("Scheduled watcher: " + config.getName() + " with cron " + config.getCron());
+        }
+    }
+}
