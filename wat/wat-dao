@@ -1,0 +1,26 @@
+@Repository
+public class ExpiryWatcherDao {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private final Map<String, String> queries = new HashMap<>();
+
+    @PostConstruct
+    public void loadQueries() throws Exception {
+        Document doc = DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .parse(new ClassPathResource("queries.xml").getInputStream());
+        NodeList nodes = doc.getElementsByTagName("query");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element e = (Element) nodes.item(i);
+            queries.put(e.getAttribute("id"), e.getTextContent().trim());
+        }
+    }
+
+    public List<Map<String, Object>> findRecords(String queryId) {
+        String sql = queries.get(queryId);
+        if (sql == null) throw new IllegalArgumentException("Query not found: " + queryId);
+        return jdbcTemplate.queryForList(sql);
+    }
+}
