@@ -1,0 +1,20 @@
+# Oracle Datasource
+spring.datasource.url=jdbc:oracle:thin:@//localhost:1521/ORCLCDB
+spring.datasource.username=myuser
+spring.datasource.password=mypass
+spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+
+# Watcher configurations
+watchers.configs[0].name=expiry-watcher
+watchers.configs[0].enabled=true
+watchers.configs[0].tableName=hold_transactions
+watchers.configs[0].uniqueColumn=hold_trn_id
+watchers.configs[0].cron=0 */1 * * * *  # every 1 minute
+watchers.configs[0].queryId=findExpiredTransactions
+
+watchers.configs[1].name=other-watcher
+watchers.configs[1].enabled=true
+watchers.configs[1].tableName=other_table
+watchers.configs[1].uniqueColumn=id
+watchers.configs[1].cron=0 */5 * * * *  # every 5 minutes
+watchers.configs[1].queryId=findOtherRecords
