@@ -47,3 +47,55 @@ public class GenericWatcherJob {
         log.info("Watcher {} processed row {}", config.getName(), uniqueId);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+@Component
+public class GenericWatcherJob {
+
+    private static final Logger log = LoggerFactory.getLogger(GenericWatcherJob.class);
+
+    @Autowired
+    private ExpiryWatcherDao dao;
+
+    @Autowired
+    private JobScheduler jobScheduler;
+
+    @Autowired
+    private WatcherProcessor processor;
+
+    @Autowired
+    private WatcherProperties.WatcherConfig config;
+
+    public void runWatcher() {
+        if (!config.isEnabled()) {
+            log.info("Watcher {} is disabled, skipping run", config.getName());
+            return;
+        }
+
+        log.info("Watcher {} started", config.getName());
+
+        List<Map<String, Object>> rows = dao.findRecords(config.getQueryId());
+        log.info("Watcher {} found {} rows", config.getName(), rows.size());
+
+        for (Map<String, Object> row : rows) {
+            String uniqueId = (String) row.get(config.getUniqueColumn());
+            String jobId = config.getName() + "-" + uniqueId;
+
+            jobScheduler.enqueueUnique(jobId, () -> processor.processRow(row));
+        }
+
+        log.info("Watcher {} finished", config.getName());
+    }
+}
+
