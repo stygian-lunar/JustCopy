@@ -60,3 +60,54 @@ public class WatcherSchedulerConfig {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+@Configuration
+public class WatcherSchedulerConfig {
+
+    @Autowired
+    private JobScheduler jobScheduler;
+
+    @Autowired
+    private ExpiryWatcherDao dao;
+
+    @Autowired
+    private WatcherProperties watcherProperties;
+
+    @Autowired
+    private Map<String, WatcherProcessor> processorBeans;
+
+    @PostConstruct
+    public void init() {
+        for (WatcherProperties.WatcherConfig config : watcherProperties.getConfigs()) {
+            if (!config.isEnabled()) continue;
+
+            WatcherProcessor processor = processorBeans.get(config.getName() + "Processor");
+            if (processor == null) {
+                throw new IllegalStateException("Processor not found for watcher: " + config.getName());
+            }
+
+            GenericWatcherJob watcherJob = new GenericWatcherJob();
+            watcherJob.dao = dao;
+            watcherJob.jobScheduler = jobScheduler;
+            watcherJob.processor = processor;
+            watcherJob.config = config;
+
+            jobScheduler.scheduleRecurrently(
+                    config.getName(),
+                    Cron.parse(config.getCron()),
+                    watcherJob::runWatcher
+            );
+
+            System.out.println("Scheduled watcher: " + config.getName() + " with cron " + config.getCron());
+        }
+    }
+}
+
