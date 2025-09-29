@@ -1,0 +1,49 @@
+public class GenericWatcherJob {
+
+    private static final Logger log = LoggerFactory.getLogger(GenericWatcherJob.class);
+
+    private final ExpiryWatcherDao dao;
+    private final JobScheduler jobScheduler;
+    private final SolacePublisherService publisher;
+    private final WatcherProperties.WatcherConfig config;
+
+    public GenericWatcherJob(ExpiryWatcherDao dao,
+                             JobScheduler jobScheduler,
+                             SolacePublisherService publisher,
+                             WatcherProperties.WatcherConfig config) {
+        this.dao = dao;
+        this.jobScheduler = jobScheduler;
+        this.publisher = publisher;
+        this.config = config;
+    }
+
+    public void runWatcher() {
+        if (!config.isEnabled()) {
+            log.info("Watcher {} is disabled, skipping run", config.getName());
+            return;
+        }
+
+        log.info("Watcher {} started", config.getName());
+
+        List<Map<String, Object>> rows = dao.findRecords(config.getQueryId());
+        log.info("Watcher {} found {} rows", config.getName(), rows.size());
+
+        for (Map<String, Object> row : rows) {
+            String uniqueId = (String) row.get(config.getUniqueColumn());
+            String jobId = config.getName() + "-" + uniqueId;
+
+            jobScheduler.enqueueUnique(jobId, () -> processRow(row));
+        }
+
+        log.info("Watcher {} finished", config.getName());
+    }
+
+    public void processRow(Map<String, Object> row) {
+        String uniqueId = (String) row.get(config.getUniqueColumn());
+        log.info("Watcher {} processing row {}", config.getName(), uniqueId);
+
+        publisher.publishTransaction(row);
+
+        log.info("Watcher {} processed row {}", config.getName(), uniqueId);
+    }
+}
