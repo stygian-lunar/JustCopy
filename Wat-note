@@ -1,0 +1,91 @@
+Note:
+
+Perfect 👍 that makes things clearer.
+
+So in your design:
+
+* **Watcher service**
+
+  * Runs every 1 min (cron/fixedRate).
+  * Fetches expired rows with status = `ON_HOLD`.
+  * Sends them to another service via Solace.
+  * ❌ Does **not** update DB.
+
+* **Another service**
+
+  * Consumes messages from Solace.
+  * Updates the row status → `PROCESSED`.
+
+---
+
+## 🔹 Now what happens with `lockAtMostFor = 5m`
+
+### Case 1: **Job finishes in 1 min**
+
+* Watcher acquires lock at `T=0`.
+* Sends records to Solace.
+* Finishes at `T=1m`.
+* **ShedLock releases the lock early** (doesn’t hold it until 5m).
+* At `T=2m`, the watcher can run again.
+* ✅ No problem here.
+
+---
+
+### Case 2: **Job takes longer than lockAtMostFor** (e.g., 10 mins, lock = 5 mins)
+
+* Lock expires before job completes.
+* Another instance may acquire the lock and start scanning again.
+* Since status is still `ON_HOLD` (watcher doesn’t update), duplicates are sent to Solace.
+* ⚠️ Risk of duplicates, unless downstream service is idempotent.
+
+---
+
+## 🔹 Why you are safer in your case
+
+* Because **the downstream service updates the status to PROCESSED**, duplicates are automatically avoided *after the status update*.
+* But in the **window between Watcher sending → Service processing → Status updated**, the **same record may be sent again** if the watcher runs again and sees it still as `ON_HOLD`.
+
+Example:
+
+* At `T=0m`, watcher sends 100 records.
+* At `T=1m`, watcher runs again → DB still shows some as `ON_HOLD` (because other service hasn’t updated yet).
+* Those same records may be sent again.
+* If Solace and the downstream service are **idempotent** (e.g., check `hold_trn_id` before marking processed), then **duplicates don’t hurt**.
+
+---
+
+## 🔹 Options for You
+
+1. **Keep as is, rely on downstream idempotency** ✅
+
+   * Make sure downstream ignores duplicates (based on unique `hold_trn_id`).
+   * This is **already needed** since Solace guarantees *at-least-once delivery*.
+
+2. **Introduce a temporary “IN\_PROGRESS” marker**
+
+   * Watcher marks rows as `IN_PROGRESS` before sending.
+   * Prevents re-fetching the same row while Solace delivery is pending.
+   * But this means watcher must perform an **UPDATE**, which you said you don’t want.
+
+3. **Increase lockAtMostFor**
+
+   * If jobs are long (e.g., 10m), set lock to >10m.
+   * Prevents mid-job overlap between instances.
+   * Downside: recovery from crash is delayed until lock expiry.
+
+4. **Switch to JobRunr**
+
+   * Each record/batch becomes a persistent job.
+   * If instance dies, another continues.
+   * No time-based lock issues.
+
+---
+
+✅ **Summary in your case:**
+
+* If jobs finish within lockAtMostFor → safe, no duplicates.
+* If jobs run longer than lockAtMostFor → duplicates may be sent, but downstream can safely ignore them (since it updates status).
+
+---
+
+👉 Do you want me to show you how to **design the Solace consumer (downstream service) to be idempotent** so it safely handles duplicates from the watcher?
