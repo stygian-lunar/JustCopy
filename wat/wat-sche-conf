@@ -1,0 +1,22 @@
+@Configuration
+public class WatcherSchedulerConfig {
+
+    public WatcherSchedulerConfig(JobScheduler jobScheduler,
+                                  ExpiryWatcherDao dao,
+                                  SolacePublisherService publisher,
+                                  WatcherProperties watcherProperties) {
+
+        for (WatcherProperties.WatcherConfig config : watcherProperties.getConfigs()) {
+            GenericWatcherJob watcherJob = new GenericWatcherJob(dao, jobScheduler, publisher, config);
+
+            if (!config.isEnabled()) continue;
+
+            // Schedule recurring job using cron from properties
+            jobScheduler.scheduleRecurrently(
+                    config.getName(),
+                    Cron.parse(config.getCron()),
+                    watcherJob::runWatcher
+            );
+        }
+    }
+}
